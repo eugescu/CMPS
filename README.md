@@ -44,6 +44,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 
 - `src/ContinuumQuadratureCMPS.jl` — generic cMPS-like object, quadrature Hamiltonians, diagnostics, a finite-difference grid baseline, Optim-based scalar optimizer, ITensor contraction bridge.
 - `src/Gates.jl` — one-mode continuous-variable gate definitions, inverses, and function-space/grid-backed application.
+- `docs/one_mode_demonstration.md` — narrative one-mode demonstration from Hamiltonians through GKP noise and one-mode gate errors.
 - `test/runtests.jl` — grid helper tests, harmonic Gaussian checks, finite-difference oscillator spectrum, GKP finite-comb trend, ITensor bridge sanity check, and constant-gauge χ > 1 checks.
 - `examples/01_harmonic_gaussian.jl` — Gaussian ground state of harmonic oscillator.
 - `examples/02_anharmonic_quartic.jl` — quartic oscillator variational non-Gaussian trial.
