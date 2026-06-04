@@ -759,5 +759,6 @@ end
 
 include("Gates.jl")
 include("GridMPS.jl")
+include("FockDiagnostics.jl")
 
 end # module

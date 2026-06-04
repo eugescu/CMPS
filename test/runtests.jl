@@ -378,3 +378,27 @@ end
     @test schmidt_entropy(out_tms.singular_values) > 0.1
     @test out_tms.truncation_error < 1e-6
 end
+
+@testset "Fock projection diagnostics" begin
+    qgrid = collect(range(-10.0, 10.0; length=1201))
+    Φ = fock_basis_values(qgrid, 6)
+    @test real(grid_inner(qgrid, Φ[:, 1], Φ[:, 1])) ≈ 1.0 atol=1e-10
+    @test abs(grid_inner(qgrid, Φ[:, 1], Φ[:, 2])) < 1e-10
+
+    ψvac = copy(Φ[:, 1])
+    coeffs_vac = fock_coefficients_from_grid(qgrid, ψvac; Nmax=12)
+    @test abs2(coeffs_vac[1]) ≈ 1.0 atol=1e-10
+    @test fock_weight(coeffs_vac) ≈ 1.0 atol=1e-10
+    @test required_fock_cutoff(coeffs_vac; tol=1e-8) == 1
+
+    r = 0.7
+    ψs = ComplexF64[π^(-1 / 4) * exp(r / 2) * exp(-0.5 * exp(2r) * q^2)
+                    for q in qgrid]
+    normalize_grid_state!(qgrid, ψs)
+    d = gkp_diagnostics(qgrid, ψs)
+    @test photon_number_from_qp(d.q2, d.p2) ≈ sinh(r)^2 atol=2e-3
+
+    coeffs_s = fock_coefficients_from_grid(qgrid, ψs; Nmax=40)
+    @test fock_weight(coeffs_s) > 1 - 1e-8
+    @test required_fock_cutoff(coeffs_s; tol=1e-6) > 1
+end
