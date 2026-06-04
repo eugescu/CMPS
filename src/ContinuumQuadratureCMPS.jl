@@ -757,4 +757,6 @@ function optimize_scalar_params(build::Function, θ0::AbstractVector, H::Hamilto
             energy=energy(H, qs, ψopt), diagnostics=diagnostics(H, qs, ψopt))
 end
 
+include("Gates.jl")
+
 end # module

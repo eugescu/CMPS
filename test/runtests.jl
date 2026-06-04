@@ -184,3 +184,38 @@ end
     @test d.p2 > 0
     @test 0 <= d.boundary_weight <= 1
 end
+
+@testset "one-mode gates" begin
+    qgrid = collect(range(-10.0, 10.0; length=1001))
+    dq = qgrid[2] - qgrid[1]
+    ψ = ComplexF64[π^(-1 / 4) * exp(-0.5 * q^2) for q in qgrid]
+    normalize_grid_state!(qgrid, ψ)
+
+    qmean(ϕ) = real(sum(conj.(ϕ) .* (qgrid .* ϕ)) * dq)
+    q2mean(ϕ) = real(sum(abs2.(qgrid) .* abs2.(ϕ)) * dq)
+
+    @test grid_state_norm(qgrid, ψ) ≈ 1.0 atol=1e-10
+
+    ψeval = linear_interpolating_eval(qgrid, ψ)
+    @test ψeval(0.0) ≈ π^(-1 / 4) atol=1e-4
+    @test ψeval(qgrid[1] - 1.0) == 0.0 + 0.0im
+
+    ψx = apply_gate_to_grid(XDisplacementGate(1.0), qgrid, ψ)
+    @test qmean(ψx) ≈ 1.0 atol=1e-3
+
+    ψz = apply_gate_to_grid(ZDisplacementGate(0.7), qgrid, ψ)
+    @test maximum(abs.(abs2.(ψz) .- abs2.(ψ))) < 1e-10
+
+    ψw = apply_gate_to_grid(WeylDisplacementGate(1.0, 0.7), qgrid, ψ)
+    @test qmean(ψw) ≈ 1.0 atol=1e-3
+
+    ψquad = apply_gate_to_grid(QuadraticPhaseGate(0.25), qgrid, ψ)
+    @test maximum(abs.(abs2.(ψquad) .- abs2.(ψ))) < 1e-10
+
+    ψcubic = apply_gate_to_grid(CubicPhaseGate(0.05), qgrid, ψ)
+    @test maximum(abs.(abs2.(ψcubic) .- abs2.(ψ))) < 1e-10
+
+    r = 0.4
+    ψs = apply_gate_to_grid(SqueezeGate(r), qgrid, ψ)
+    @test q2mean(ψs) ≈ 0.5 * exp(-2r) atol=1e-3
+end
