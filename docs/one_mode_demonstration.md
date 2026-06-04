@@ -53,6 +53,52 @@ Relevant file:
 
 - `examples/06_constant_gauge_quartic.jl`
 
+## Hero Benchmark: Regularized GKP Scaling
+
+The main one-mode demonstration is not pure squeezing. Squeezed vacuum is an
+important calibration case, but it is Gaussian and a Gaussian-aware simulator can
+handle it analytically. The stronger target is a high-energy, non-Gaussian,
+finite-energy GKP-like state with stabilizer structure in both `q` and `p`.
+
+The scaling example sweeps the regularized-GKP envelope strength `kappa`:
+
+```text
+Hreg = -epsilon [cos(alpha q) + cos(alpha p)] + kappa (q^2 + p^2)/2.
+```
+
+As `kappa` decreases, the harmonic envelope weakens and the state becomes more
+extended and more code-like. The benchmark reports:
+
+```text
+kappa, chi, energy error, F2, residual, stabilizers, nbar,
+required Fock cutoff, boundary weight, parameter count, grid size
+```
+
+The photon-number proxy
+
+```text
+nbar = (<q^2> + <p^2> - 1)/2
+```
+
+connects the continuum calculation to a conventional Fock-basis baseline. The
+reported Fock cutoff is measured by projecting the grid wavefunction onto
+harmonic-oscillator eigenfunctions and asking for cumulative weight above
+`1 - 1e-6`. A rough proxy `5*nbar` is printed beside it as a conservative scale,
+not as a theorem.
+
+This is the headline claim:
+
+```text
+as the finite-energy GKP state becomes harder, nbar and the Fock cutoff grow,
+while a small continuum matrix ansatz can still be evaluated directly against
+the code-sector metric F2.
+```
+
+Relevant files:
+
+- `examples/14_one_mode_gkp_scaling_demo.jl`
+- `src/FockDiagnostics.jl`
+
 ## Regularized GKP Hamiltonian
 
 The regularized GKP benchmark uses
@@ -117,6 +163,20 @@ Relevant file:
 
 - `examples/08_gkp_hamiltonian_noise.jl`
 
+## High-Squeezing Stress Test
+
+The high-squeezing stress example is deliberately secondary. It checks that the
+grid and Fock diagnostics behave sensibly when one quadrature becomes narrow and
+the conjugate quadrature becomes broad. It reports squeezed vacuum,
+cubic-phase-distorted squeezed vacuum, and a sharper approximate GKP comb.
+
+The important rule is to report both `<q^2>` and `<p^2>`. A state can look easy
+in `q` while hiding a large momentum width and a large Fock cutoff.
+
+Relevant file:
+
+- `examples/15_high_squeezing_stress.jl`
+
 ## One-Mode Gates
 
 The one-mode gate layer adds circuit-style operations on grid-backed
@@ -155,7 +215,18 @@ Relevant files:
 ## Conclusion
 
 The one-mode layer is now validated enough to become the physical-index update
-inside a grid-backed MPS. The next layer is many-qumode mechanics:
+inside a grid-backed MPS. The narrative is:
+
+```text
+sanity checks
+-> non-Gaussian variational benchmark
+-> regularized GKP doublet
+-> scaling/compression with Fock diagnostics
+-> Hamiltonian noise
+-> gates and displacement-error channels
+```
+
+The next layer is many-qumode mechanics:
 
 ```text
 GridMPSSite: A[chiL, q, chiR]
