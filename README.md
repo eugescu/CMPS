@@ -31,6 +31,7 @@ julia --project=. examples/06_constant_gauge_quartic.jl
 julia --project=. examples/07_regularized_gkp.jl
 julia --project=. examples/08_gkp_hamiltonian_noise.jl
 julia --project=. examples/09_one_mode_gates.jl
+julia --project=. examples/10_one_mode_gkp_errors.jl
 ```
 
 Run tests:
@@ -53,6 +54,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `examples/07_regularized_gkp.jl` — χ sweep for the finite-energy regularized GKP Hamiltonian with FD spectrum, low-energy sector overlaps, residual, and boundary diagnostics.
 - `examples/08_gkp_hamiltonian_noise.jl` — χ=3 quartic Hamiltonian-noise sweep with noisy-sector and clean-code-sector fidelities.
 - `examples/09_one_mode_gates.jl` — one-mode CV gate sanity checks on a grid vacuum state.
+- `examples/10_one_mode_gkp_errors.jl` — X/Z displacement-error sweeps on the regularized GKP clean doublet.
 
 ## Benchmarks
 

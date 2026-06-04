@@ -255,3 +255,34 @@ end
                                 apply_gate_to_grid(SqueezeGate(0.2), qgrid, ψ))
     @test fidelity(ψ, ψsback) > 1 - 1e-5
 end
+
+@testset "one-mode GKP displacement errors" begin
+    α = 2sqrt(pi)
+    g = GridSpec(-8.0, 8.0, 201)
+    qgrid = grid(g)
+    Hdesc = regularized_gkp_hamiltonian(; ε=1.0, κ=0.05, α, boundary=:zero)
+    fd = grid_eigenstates(Hdesc, g; nev=4)
+    ψ0 = copy(fd.wavefunctions[:, 1])
+    normalize_grid_state!(qgrid, ψ0)
+
+    ψx_small = apply_gate_to_grid(XDisplacementGate(0.05), qgrid, ψ0)
+    ψx_large = apply_gate_to_grid(XDisplacementGate(0.4), qgrid, ψ0)
+    Fx_small = grid_subspace_overlap_abs2(qgrid, ψx_small, fd.wavefunctions; nstates=2)
+    Fx_large = grid_subspace_overlap_abs2(qgrid, ψx_large, fd.wavefunctions; nstates=2)
+    @test Fx_small > Fx_large
+    @test Fx_small > 0.95
+
+    ψz_small = apply_gate_to_grid(ZDisplacementGate(0.05), qgrid, ψ0)
+    ψz_large = apply_gate_to_grid(ZDisplacementGate(0.4), qgrid, ψ0)
+    Fz_small = grid_subspace_overlap_abs2(qgrid, ψz_small, fd.wavefunctions; nstates=2)
+    Fz_large = grid_subspace_overlap_abs2(qgrid, ψz_large, fd.wavefunctions; nstates=2)
+    @test Fz_small > Fz_large
+    @test Fz_small > 0.95
+
+    dx = gkp_diagnostics(qgrid, ψx_large; α, boundary=:zero)
+    dz = gkp_diagnostics(qgrid, ψz_large; α, boundary=:zero)
+    @test isfinite(dx.cosq)
+    @test isfinite(dx.cosp)
+    @test isfinite(dz.cosq)
+    @test isfinite(dz.cosp)
+end
