@@ -337,3 +337,27 @@ end
     @test err4 < err1
     @test truncation_error(Sent4, length(Sent4)) ≈ 0.0 atol=1e-12
 end
+
+@testset "GridMPS cross-phase two-mode gate" begin
+    qgrid = collect(range(-6.0, 6.0; length=121))
+    dq = qgrid[2] - qgrid[1]
+    ψ = ComplexF64[π^(-1 / 4) * exp(-0.5 * q^2) for q in qgrid]
+
+    mps1 = product_gridmps(qgrid, (ψ, ψ))
+    out1 = apply_two_mode_gate!(mps1, 1, CrossPhaseGate(0.35); χmax=1)
+
+    mps4 = product_gridmps(qgrid, (ψ, ψ))
+    out4 = apply_two_mode_gate!(mps4, 1, CrossPhaseGate(0.35); χmax=4)
+
+    @test length(out4.singular_values) == 4
+    @test schmidt_entropy(out4.singular_values) > 0.01
+    @test out4.truncation_error < out1.truncation_error
+    @test gridmps_norm(mps4) ≈ 1.0 atol=1e-10
+
+    mps_inv = product_gridmps(qgrid, (ψ, ψ))
+    Ψ0 = gridmps_to_dense(mps_inv)
+    apply_two_mode_gate!(mps_inv, 1, CrossPhaseGate(0.25); χmax=16)
+    apply_two_mode_gate!(mps_inv, 1, inverse_gate(CrossPhaseGate(0.25)); χmax=16)
+    Ψback = gridmps_to_dense(mps_inv)
+    @test real(sum(abs2, Ψ0 - Ψback) * dq^2) < 1e-10
+end

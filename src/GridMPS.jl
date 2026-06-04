@@ -8,6 +8,7 @@ export GridMPSSite,
        two_site_block,
        split_two_site_block,
        replace_two_sites!,
+       apply_two_mode_gate!,
        schmidt_entropy,
        truncation_error
 
@@ -186,4 +187,30 @@ function replace_two_sites!(mps::GridMPS, i::Integer, Anew, Bnew)
     mps.sites[i] = GridMPSSite(ComplexF64.(Anew))
     mps.sites[i + 1] = GridMPSSite(ComplexF64.(Bnew))
     return mps
+end
+
+function apply_gate_to_block!(Θ, qgrid::AbstractVector, gate::CrossPhaseGate)
+    _, N1, N2, _ = size(Θ)
+    length(qgrid) == N1 == N2 || error("qgrid length must match block physical legs")
+    γ = gate.γ
+    for i in 1:N1, j in 1:N2
+        Θ[:, i, j, :] .*= exp(-im * γ * qgrid[i] * qgrid[j])
+    end
+    return Θ
+end
+
+function apply_two_mode_gate!(mps::GridMPS, i::Integer, gate::AbstractTwoModeGate;
+                              χmax::Int=typemax(Int), cutoff::Real=0.0,
+                              renormalize::Bool=true)
+    Θ = two_site_block(mps, i)
+    apply_gate_to_block!(Θ, mps.qgrid, gate)
+    Anew, Bnew, S, err = split_two_site_block(mps.qgrid, Θ; χmax, cutoff)
+    replace_two_sites!(mps, i, Anew, Bnew)
+
+    if renormalize
+        Ψnorm = gridmps_norm(mps)
+        mps.sites[1].A ./= max(Ψnorm, eps(Float64))
+    end
+
+    return (; singular_values=S, truncation_error=err)
 end
