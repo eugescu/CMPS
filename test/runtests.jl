@@ -306,3 +306,34 @@ end
     @test dense_q_mean(qgrid, Ψx, 1) ≈ 1.0 atol=1e-3
     @test dense_q_mean(qgrid, Ψx, 2) ≈ 0.0 atol=1e-10
 end
+
+@testset "GridMPS two-site block and SVD splitting" begin
+    qgrid = collect(range(-6.0, 6.0; length=121))
+    dq = qgrid[2] - qgrid[1]
+    ψ = ComplexF64[π^(-1 / 4) * exp(-0.5 * q^2) for q in qgrid]
+    mps = product_gridmps(qgrid, (ψ, ψ))
+    Ψ0 = gridmps_to_dense(mps)
+
+    Θ = two_site_block(mps, 1)
+    Anew, Bnew, S, err = split_two_site_block(qgrid, Θ; χmax=4)
+    @test length(S) == 4
+    @test err ≈ 0.0 atol=1e-12
+    @test S[1] ≈ 1.0 atol=1e-10
+    @test truncation_error(S, 1) < 1e-12
+    @test schmidt_entropy(S) < 1e-10
+
+    replace_two_sites!(mps, 1, Anew, Bnew)
+    Ψ1 = gridmps_to_dense(mps)
+    @test real(sum(abs2, Ψ0 - Ψ1) * dq^2) < 1e-20
+    @test gridmps_norm(mps) ≈ 1.0 atol=1e-10
+
+    Θent = copy(Θ)
+    for i in eachindex(qgrid), j in eachindex(qgrid)
+        Θent[1, i, j, 1] *= exp(-0.25im * qgrid[i] * qgrid[j])
+    end
+    _, _, Sent, err1 = split_two_site_block(qgrid, Θent; χmax=1)
+    _, _, Sent4, err4 = split_two_site_block(qgrid, Θent; χmax=4)
+    @test schmidt_entropy(Sent4) > 0
+    @test err4 < err1
+    @test truncation_error(Sent4, length(Sent4)) ≈ 0.0 atol=1e-12
+end
