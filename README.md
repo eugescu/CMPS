@@ -36,6 +36,7 @@ julia --project=. examples/11_gridmps_product_states.jl
 julia --project=. examples/12_cross_phase_gate.jl
 julia --project=. examples/13_two_mode_gaussian_gates.jl
 julia --project=. examples/14_one_mode_gkp_scaling_demo.jl
+julia --project=. examples/15_high_squeezing_stress.jl
 ```
 
 Run tests:
@@ -66,6 +67,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `examples/12_cross_phase_gate.jl` — first two-mode `GridMPS` gate, diagonal cross phase with SVD truncation diagnostics.
 - `examples/13_two_mode_gaussian_gates.jl` — beam splitter and two-mode squeezing on `GridMPS` product vacua.
 - `examples/14_one_mode_gkp_scaling_demo.jl` — one-mode regularized-GKP scaling/compression sweep with Fock cutoff diagnostics.
+- `examples/15_high_squeezing_stress.jl` — squeezed, cubic-phase, and comb-state stress test with photon/Fock diagnostics.
 
 ## Benchmarks
 
