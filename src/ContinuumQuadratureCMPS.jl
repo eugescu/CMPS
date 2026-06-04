@@ -758,5 +758,6 @@ function optimize_scalar_params(build::Function, θ0::AbstractVector, H::Hamilto
 end
 
 include("Gates.jl")
+include("GridMPS.jl")
 
 end # module

@@ -32,6 +32,7 @@ julia --project=. examples/07_regularized_gkp.jl
 julia --project=. examples/08_gkp_hamiltonian_noise.jl
 julia --project=. examples/09_one_mode_gates.jl
 julia --project=. examples/10_one_mode_gkp_errors.jl
+julia --project=. examples/11_gridmps_product_states.jl
 ```
 
 Run tests:
@@ -44,6 +45,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 
 - `src/ContinuumQuadratureCMPS.jl` — generic cMPS-like object, quadrature Hamiltonians, diagnostics, a finite-difference grid baseline, Optim-based scalar optimizer, ITensor contraction bridge.
 - `src/Gates.jl` — one-mode continuous-variable gate definitions, inverses, and function-space/grid-backed application.
+- `src/GridMPS.jl` — grid-backed MPS site/state types, product states, dense conversion, norms, and one-site gate updates.
 - `docs/one_mode_demonstration.md` — narrative one-mode demonstration from Hamiltonians through GKP noise and one-mode gate errors.
 - `test/runtests.jl` — grid helper tests, harmonic Gaussian checks, finite-difference oscillator spectrum, GKP finite-comb trend, ITensor bridge sanity check, and constant-gauge χ > 1 checks.
 - `examples/01_harmonic_gaussian.jl` — Gaussian ground state of harmonic oscillator.
@@ -56,6 +58,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `examples/08_gkp_hamiltonian_noise.jl` — χ=3 quartic Hamiltonian-noise sweep with noisy-sector and clean-code-sector fidelities.
 - `examples/09_one_mode_gates.jl` — one-mode CV gate sanity checks on a grid vacuum state.
 - `examples/10_one_mode_gkp_errors.jl` — X/Z displacement-error sweeps on the regularized GKP clean doublet.
+- `examples/11_gridmps_product_states.jl` — product-state `GridMPS` construction and one-site gate update.
 
 ## Benchmarks
 

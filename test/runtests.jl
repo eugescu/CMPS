@@ -286,3 +286,23 @@ end
     @test isfinite(dz.cosq)
     @test isfinite(dz.cosp)
 end
+
+@testset "GridMPS product states and one-site gates" begin
+    qgrid = collect(range(-8.0, 8.0; length=201))
+    ψ = ComplexF64[π^(-1 / 4) * exp(-0.5 * q^2) for q in qgrid]
+    mps = product_gridmps(qgrid, (ψ, ψ))
+
+    @test length(mps.sites) == 2
+    @test size(mps.sites[1].A) == (1, length(qgrid), 1)
+    @test gridmps_norm(mps) ≈ 1.0 atol=1e-10
+
+    Ψ0 = gridmps_to_dense(mps)
+    @test dense_q_mean(qgrid, Ψ0, 1) ≈ 0.0 atol=1e-10
+    @test dense_q_mean(qgrid, Ψ0, 2) ≈ 0.0 atol=1e-10
+
+    apply_one_mode_gate!(mps, 1, XDisplacementGate(1.0))
+    Ψx = gridmps_to_dense(mps)
+    @test gridmps_norm(mps) ≈ 1.0 atol=1e-10
+    @test dense_q_mean(qgrid, Ψx, 1) ≈ 1.0 atol=1e-3
+    @test dense_q_mean(qgrid, Ψx, 2) ≈ 0.0 atol=1e-10
+end
