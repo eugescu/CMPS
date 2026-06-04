@@ -159,6 +159,23 @@ end
     @test size(Cp) == size(H)
     @test norm(Cp - Cp') / max(norm(Cp), eps()) < 1e-10
 
+    Cphase = cos_p_phase_matrix(qgrid, α, 0.1; boundary=:zero)
+    @test size(Cphase) == size(H)
+    @test norm(Cphase - Cphase') / max(norm(Cphase), eps()) < 1e-10
+
+    noise_ops = (
+        regularized_gkp_noise_operator(qgrid; kind=:tilt_q, α, fq=1e-3),
+        regularized_gkp_noise_operator(qgrid; kind=:trap, α, δq2=1e-3, δp2=2e-3),
+        regularized_gkp_noise_operator(qgrid; kind=:quartic_q, α, λq4=1e-4),
+        regularized_gkp_noise_operator(qgrid; kind=:cos2q, α, amp2q=1e-3),
+        regularized_gkp_noise_operator(qgrid; kind=:phase_q, α, phaseq=0.05),
+        regularized_gkp_noise_operator(qgrid; kind=:phase_p, α, phasep=0.05),
+    )
+    for Nop in noise_ops
+        @test size(Nop) == size(H)
+        @test norm(Nop - Nop') / max(norm(Nop), eps()) < 1e-10
+    end
+
     d = gkp_diagnostics(qgrid, ψ; α, boundary=:zero)
     @test d.norm ≈ 1.0 atol=1e-10
     @test isfinite(d.cosq)

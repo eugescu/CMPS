@@ -29,6 +29,7 @@ julia --project=. examples/04_regularized_gkp.jl
 julia --project=. examples/05_constant_gauge_harmonic.jl
 julia --project=. examples/06_constant_gauge_quartic.jl
 julia --project=. examples/07_regularized_gkp.jl
+julia --project=. examples/08_gkp_hamiltonian_noise.jl
 ```
 
 Run tests:
@@ -48,6 +49,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `examples/05_constant_gauge_harmonic.jl` — first χ > 1 constant-gauge matrix ansatz benchmarked on the harmonic oscillator.
 - `examples/06_constant_gauge_quartic.jl` — χ sweep for the quartic oscillator with FD energy, overlap, normalization, and residual diagnostics.
 - `examples/07_regularized_gkp.jl` — χ sweep for the finite-energy regularized GKP Hamiltonian with FD spectrum, low-energy sector overlaps, residual, and boundary diagnostics.
+- `examples/08_gkp_hamiltonian_noise.jl` — χ=3 quartic Hamiltonian-noise sweep with noisy-sector and clean-code-sector fidelities.
 
 ## Benchmarks
 

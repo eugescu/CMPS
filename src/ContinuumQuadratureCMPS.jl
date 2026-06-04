@@ -12,7 +12,8 @@ export GridSpec, grid, trapz, CMPS, wavefunction, amplitude,
        finite_difference_hamiltonian, grid_eigenstates,
        harmonic_hamiltonian, anharmonic_hamiltonian,
        ideal_gkp_hamiltonian, regularized_gkp_hamiltonian,
-       translation_matrix, cos_p_matrix,
+       translation_matrix, cos_p_matrix, cos_p_phase_matrix,
+       regularized_gkp_noise_operator,
        ConstantGaugeCMPSFamily, nparams, random_constant_gauge_theta,
        unpack_constant_gauge, amplitude_constant_gauge,
        amplitudes_constant_gauge, normalized_amplitudes_constant_gauge,
@@ -368,6 +369,66 @@ function cos_p_matrix(qs::AbstractVector{<:Real}, α::Real; boundary::Symbol=:ze
     C = 0.5 .* (translation_matrix(qs, α; boundary) +
                 translation_matrix(qs, -α; boundary))
     return 0.5 .* (C .+ C')
+end
+
+"""
+    cos_p_phase_matrix(qgrid, α, ϕ; boundary=:zero)
+
+Grid representation of `cos(αp + ϕ)` using the translation form. The bounded
+grid matrix is explicitly symmetrized to enforce Hermiticity.
+"""
+function cos_p_phase_matrix(qs::AbstractVector{<:Real}, α::Real, ϕ::Real;
+                            boundary::Symbol=:zero)
+    Tp = translation_matrix(qs, α; boundary)
+    Tm = translation_matrix(qs, -α; boundary)
+    C = 0.5 .* (exp(im * Float64(ϕ)) .* Tp .+
+                exp(-im * Float64(ϕ)) .* Tm)
+    return 0.5 .* (C .+ C')
+end
+
+"""
+    regularized_gkp_noise_operator(qgrid; kind, ...)
+
+Build a Hermitian finite-grid perturbation for the regularized GKP Hamiltonian.
+The first supported terms avoid raw `p` so bounded-grid derivative conventions
+cannot silently break Hermiticity.
+"""
+function regularized_gkp_noise_operator(
+    qgrid::AbstractVector;
+    kind::Symbol,
+    α::Real=2sqrt(pi),
+    fq::Real=0.0,
+    δq2::Real=0.0,
+    δp2::Real=0.0,
+    λq4::Real=0.0,
+    amp2q::Real=0.0,
+    phaseq::Real=0.0,
+    phasep::Real=0.0,
+    boundary::Symbol=:zero,
+)
+    qs = Float64.(qgrid)
+    αf = Float64(α)
+
+    Op =
+        if kind == :tilt_q
+            spdiagm(0 => Float64(fq) .* qs)
+        elseif kind == :trap
+            Float64(δq2) .* spdiagm(0 => qs.^2) .+
+            Float64(δp2) .* p2_matrix(qs)
+        elseif kind == :quartic_q
+            spdiagm(0 => Float64(λq4) .* qs.^4)
+        elseif kind == :cos2q
+            spdiagm(0 => Float64(amp2q) .* cos.(2αf .* qs))
+        elseif kind == :phase_q
+            spdiagm(0 => cos.(αf .* qs .+ Float64(phaseq)) .- cos.(αf .* qs))
+        elseif kind == :phase_p
+            cos_p_phase_matrix(qs, αf, phasep; boundary) .-
+            cos_p_matrix(qs, αf; boundary)
+        else
+            error("unknown GKP noise kind: $kind")
+        end
+
+    return 0.5 .* (Op .+ Op')
 end
 
 """
