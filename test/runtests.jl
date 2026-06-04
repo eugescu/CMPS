@@ -193,6 +193,7 @@ end
 
     qmean(ϕ) = real(sum(conj.(ϕ) .* (qgrid .* ϕ)) * dq)
     q2mean(ϕ) = real(sum(abs2.(qgrid) .* abs2.(ϕ)) * dq)
+    fidelity(ϕ, ξ) = abs2(grid_inner(qgrid, ϕ, ξ))
 
     @test grid_state_norm(qgrid, ψ) ≈ 1.0 atol=1e-10
 
@@ -218,4 +219,39 @@ end
     r = 0.4
     ψs = apply_gate_to_grid(SqueezeGate(r), qgrid, ψ)
     @test q2mean(ψs) ≈ 0.5 * exp(-2r) atol=1e-3
+
+    s = 0.3
+    t = 0.7
+    ψzx = apply_gate_to_grid(ZDisplacementGate(t), qgrid,
+                             apply_gate_to_grid(XDisplacementGate(s), qgrid, ψ;
+                                                renormalize=false))
+    ψxz = apply_gate_to_grid(XDisplacementGate(s), qgrid,
+                             apply_gate_to_grid(ZDisplacementGate(t), qgrid, ψ;
+                                                renormalize=false))
+    ψxz .*= exp(im * s * t)
+    @test fidelity(ψzx, ψxz) > 1 - 1e-6
+
+    phase_gates = (
+        ZDisplacementGate(0.7),
+        QuadraticPhaseGate(0.25),
+        CubicPhaseGate(0.05),
+    )
+    for gate in phase_gates
+        ψback = apply_gate_to_grid(inverse_gate(gate), qgrid,
+                                   apply_gate_to_grid(gate, qgrid, ψ))
+        @test fidelity(ψ, ψback) > 1 - 1e-10
+    end
+
+    ψxback = apply_gate_to_grid(inverse_gate(XDisplacementGate(0.3)), qgrid,
+                                apply_gate_to_grid(XDisplacementGate(0.3), qgrid, ψ))
+    @test fidelity(ψ, ψxback) > 1 - 1e-6
+
+    ψwback = apply_gate_to_grid(inverse_gate(WeylDisplacementGate(0.3, 0.7)), qgrid,
+                                apply_gate_to_grid(WeylDisplacementGate(0.3, 0.7),
+                                                   qgrid, ψ))
+    @test fidelity(ψ, ψwback) > 1 - 1e-6
+
+    ψsback = apply_gate_to_grid(inverse_gate(SqueezeGate(0.2)), qgrid,
+                                apply_gate_to_grid(SqueezeGate(0.2), qgrid, ψ))
+    @test fidelity(ψ, ψsback) > 1 - 1e-5
 end

@@ -6,6 +6,7 @@ export AbstractCVGate,
        QuadraticPhaseGate,
        CubicPhaseGate,
        SqueezeGate,
+       inverse_gate,
        apply_gate_to_function,
        apply_gate_to_grid,
        normalize_grid_state!,
@@ -73,6 +74,13 @@ so that `S(r)' q S(r) = exp(-r) q`.
 struct SqueezeGate <: AbstractOneModeGate
     r::Float64
 end
+
+inverse_gate(g::XDisplacementGate) = XDisplacementGate(-g.s)
+inverse_gate(g::ZDisplacementGate) = ZDisplacementGate(-g.t)
+inverse_gate(g::WeylDisplacementGate) = WeylDisplacementGate(-g.s, -g.t)
+inverse_gate(g::QuadraticPhaseGate) = QuadraticPhaseGate(-g.γ)
+inverse_gate(g::CubicPhaseGate) = CubicPhaseGate(-g.γ)
+inverse_gate(g::SqueezeGate) = SqueezeGate(-g.r)
 
 function apply_gate_to_function(g::XDisplacementGate, ψ)
     s = g.s
