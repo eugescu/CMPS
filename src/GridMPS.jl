@@ -199,6 +199,73 @@ function apply_gate_to_block!(Θ, qgrid::AbstractVector, gate::CrossPhaseGate)
     return Θ
 end
 
+function interpolation_cell(qgrid::AbstractVector, x::Real)
+    qmin = qgrid[1]
+    qmax = qgrid[end]
+    if x < qmin || x > qmax
+        return nothing
+    end
+
+    dq = grid_step(qgrid)
+    N = length(qgrid)
+    t = (Float64(x) - qmin) / dq + 1
+    i = floor(Int, t)
+    w = t - i
+    if i < 1
+        return (1, 0.0)
+    elseif i >= N
+        return (N - 1, 1.0)
+    else
+        return (i, w)
+    end
+end
+
+function interp_two_site_slice(qgrid::AbstractVector, M::AbstractMatrix, x::Real, y::Real)
+    cx = interpolation_cell(qgrid, x)
+    cy = interpolation_cell(qgrid, y)
+    if cx === nothing || cy === nothing
+        return zero(eltype(M))
+    end
+
+    i, wx = cx
+    j, wy = cy
+    return (1 - wx) * (1 - wy) * M[i, j] +
+           wx * (1 - wy) * M[i + 1, j] +
+           (1 - wx) * wy * M[i, j + 1] +
+           wx * wy * M[i + 1, j + 1]
+end
+
+function apply_coordinate_transform_to_block!(Θ, qgrid::AbstractVector, transform)
+    Θin = copy(Θ)
+    χL, N1, N2, χR = size(Θ)
+    length(qgrid) == N1 == N2 || error("qgrid length must match block physical legs")
+
+    for α in 1:χL, β in 1:χR
+        M = @view Θin[α, :, :, β]
+        for i in 1:N1, j in 1:N2
+            x1, x2 = transform(qgrid[i], qgrid[j])
+            Θ[α, i, j, β] = interp_two_site_slice(qgrid, M, x1, x2)
+        end
+    end
+    return Θ
+end
+
+function apply_gate_to_block!(Θ, qgrid::AbstractVector, gate::BeamSplitterGate)
+    c = cos(gate.θ)
+    s = sin(gate.θ)
+    return apply_coordinate_transform_to_block!(Θ, qgrid,
+                                               (q1, q2) -> (c * q1 - s * q2,
+                                                            s * q1 + c * q2))
+end
+
+function apply_gate_to_block!(Θ, qgrid::AbstractVector, gate::TwoModeSqueezerGate)
+    c = cosh(gate.r)
+    s = sinh(gate.r)
+    return apply_coordinate_transform_to_block!(Θ, qgrid,
+                                               (q1, q2) -> (c * q1 - s * q2,
+                                                            -s * q1 + c * q2))
+end
+
 function apply_two_mode_gate!(mps::GridMPS, i::Integer, gate::AbstractTwoModeGate;
                               χmax::Int=typemax(Int), cutoff::Real=0.0,
                               renormalize::Bool=true)

@@ -8,6 +8,8 @@ export AbstractCVGate,
        CubicPhaseGate,
        SqueezeGate,
        CrossPhaseGate,
+       BeamSplitterGate,
+       TwoModeSqueezerGate,
        inverse_gate,
        apply_gate_to_function,
        apply_gate_to_grid,
@@ -88,6 +90,26 @@ struct CrossPhaseGate <: AbstractTwoModeGate
     γ::Float64
 end
 
+"""
+    BeamSplitterGate(θ)
+
+Two-mode Gaussian gate using inverse q-coordinate transform
+`x1 = cos(θ) q1 - sin(θ) q2`, `x2 = sin(θ) q1 + cos(θ) q2`.
+"""
+struct BeamSplitterGate <: AbstractTwoModeGate
+    θ::Float64
+end
+
+"""
+    TwoModeSqueezerGate(r)
+
+Two-mode Gaussian gate using inverse q-coordinate transform
+`x1 = cosh(r) q1 - sinh(r) q2`, `x2 = -sinh(r) q1 + cosh(r) q2`.
+"""
+struct TwoModeSqueezerGate <: AbstractTwoModeGate
+    r::Float64
+end
+
 inverse_gate(g::XDisplacementGate) = XDisplacementGate(-g.s)
 inverse_gate(g::ZDisplacementGate) = ZDisplacementGate(-g.t)
 inverse_gate(g::WeylDisplacementGate) = WeylDisplacementGate(-g.s, -g.t)
@@ -95,6 +117,8 @@ inverse_gate(g::QuadraticPhaseGate) = QuadraticPhaseGate(-g.γ)
 inverse_gate(g::CubicPhaseGate) = CubicPhaseGate(-g.γ)
 inverse_gate(g::SqueezeGate) = SqueezeGate(-g.r)
 inverse_gate(g::CrossPhaseGate) = CrossPhaseGate(-g.γ)
+inverse_gate(g::BeamSplitterGate) = BeamSplitterGate(-g.θ)
+inverse_gate(g::TwoModeSqueezerGate) = TwoModeSqueezerGate(-g.r)
 
 function apply_gate_to_function(g::XDisplacementGate, ψ)
     s = g.s

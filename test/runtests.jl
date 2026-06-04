@@ -361,3 +361,20 @@ end
     Ψback = gridmps_to_dense(mps_inv)
     @test real(sum(abs2, Ψ0 - Ψback) * dq^2) < 1e-10
 end
+
+@testset "GridMPS Gaussian two-mode gates" begin
+    qgrid = collect(range(-6.0, 6.0; length=121))
+    ψ = ComplexF64[π^(-1 / 4) * exp(-0.5 * q^2) for q in qgrid]
+
+    mps_bs = product_gridmps(qgrid, (ψ, ψ))
+    out_bs = apply_two_mode_gate!(mps_bs, 1, BeamSplitterGate(π / 4); χmax=6)
+    @test gridmps_norm(mps_bs) ≈ 1.0 atol=1e-10
+    @test schmidt_entropy(out_bs.singular_values) < 1e-4
+    @test out_bs.singular_values[1] > 0.999
+
+    mps_tms = product_gridmps(qgrid, (ψ, ψ))
+    out_tms = apply_two_mode_gate!(mps_tms, 1, TwoModeSqueezerGate(0.4); χmax=8)
+    @test gridmps_norm(mps_tms) ≈ 1.0 atol=1e-10
+    @test schmidt_entropy(out_tms.singular_values) > 0.1
+    @test out_tms.truncation_error < 1e-6
+end
