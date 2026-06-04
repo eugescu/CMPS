@@ -16,7 +16,8 @@ export GridSpec, grid, trapz, CMPS, wavefunction, amplitude,
        ConstantGaugeCMPSFamily, nparams, random_constant_gauge_theta,
        unpack_constant_gauge, amplitude_constant_gauge,
        amplitudes_constant_gauge, normalized_amplitudes_constant_gauge,
-       grid_inner, grid_expectation, grid_overlap_abs2, grid_residual_norm,
+       grid_inner, grid_expectation, grid_overlap_abs2,
+       grid_subspace_overlap_abs2, grid_residual_norm,
        grid_boundary_weight, gkp_diagnostics,
        rayleigh_grid_energy, constant_gauge_energy,
        scalar_cmps, gaussian_cmps, quartic_trial_cmps,
@@ -360,10 +361,13 @@ translation_matrix(qs::AbstractVector{<:Real}, shift::Real; boundary::Symbol=:ze
 
 Grid representation of `cos(αp)`, using
 `cos(αp)ψ(q) = (ψ(q+α) + ψ(q-α))/2`.
+The finite-grid matrix is explicitly symmetrized because interpolation and
+boundaries otherwise break Hermiticity at machine precision.
 """
 function cos_p_matrix(qs::AbstractVector{<:Real}, α::Real; boundary::Symbol=:zero)
-    return 0.5 .* (translation_matrix(qs, α; boundary) +
-                   translation_matrix(qs, -α; boundary))
+    C = 0.5 .* (translation_matrix(qs, α; boundary) +
+                translation_matrix(qs, -α; boundary))
+    return 0.5 .* (C .+ C')
 end
 
 """
@@ -372,6 +376,8 @@ end
 Build a sparse grid Hamiltonian for `Hamiltonian1D` using the same
 Dirichlet-ish second derivative and interpolation conventions as the evaluator.
 This is the direct quadrature-grid baseline for checking variational ansaetze.
+The returned matrix is the Hermitian finite-grid representative of the continuum
+Hamiltonian.
 """
 function finite_difference_hamiltonian(H::Hamiltonian1D, g::GridSpec)
     qs = grid(g)
@@ -385,14 +391,14 @@ function finite_difference_hamiltonian(H::Hamiltonian1D, g::GridSpec)
     for (c, s) in H.translations
         M += c .* shift_interpolation_matrix(qs, s; boundary=H.boundary)
     end
-    return M, qs
+    return 0.5 .* (M .+ M'), qs
 end
 
 """
     grid_eigenstates(H, grid_spec; nev=6)
 
 Dense diagonalization wrapper for small-to-medium grid baselines. Eigenvectors
-are normalized as continuum wavefunctions with the trapezoid rule.
+are normalized with the same uniform quadrature convention as `grid_inner`.
 """
 function grid_eigenstates(H::Hamiltonian1D, g::GridSpec; nev::Int=6)
     M, qs = finite_difference_hamiltonian(H, g)
@@ -401,7 +407,7 @@ function grid_eigenstates(H::Hamiltonian1D, g::GridSpec; nev::Int=6)
     vals = F.values[1:nev]
     vecs = ComplexF64.(F.vectors[:, 1:nev])
     for k in 1:nev
-        vecs[:, k] = normalize_values(qs, vecs[:, k])
+        vecs[:, k] ./= sqrt(real(grid_inner(qs, vecs[:, k], vecs[:, k])))
     end
     return (; q=qs, energies=vals, wavefunctions=vecs, matrix=M)
 end
@@ -540,6 +546,26 @@ end
 
 function grid_overlap_abs2(qgrid::AbstractVector, ψ::AbstractVector, ϕ::AbstractVector)
     return abs2(grid_inner(qgrid, ψ, ϕ))
+end
+
+"""
+    grid_subspace_overlap_abs2(qgrid, ψ, Φ; nstates)
+
+Return the squared projection of `ψ` onto the first `nstates` columns of `Φ`,
+with all inner products evaluated using the grid quadrature rule.
+"""
+function grid_subspace_overlap_abs2(qgrid::AbstractVector, ψ::AbstractVector,
+                                    Φ::AbstractMatrix; nstates::Int)
+    length(qgrid) == length(ψ) || error("qgrid and ψ length mismatch")
+    size(Φ, 1) == length(ψ) || error("subspace basis row count mismatch")
+    1 <= nstates <= size(Φ, 2) || error("nstates must be between 1 and the basis width")
+
+    total = 0.0
+    for k in 1:nstates
+        ϕk = @view Φ[:, k]
+        total += abs2(grid_inner(qgrid, ϕk, ψ))
+    end
+    return real(total)
 end
 
 function grid_residual_norm(qgrid::AbstractVector, H, ψ::AbstractVector, E::Real)

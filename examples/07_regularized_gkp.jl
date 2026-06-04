@@ -27,10 +27,12 @@ qmin, qmax = -10.0, 10.0
 grid_spec = GridSpec(qmin, qmax, 401)
 Hdesc = regularized_gkp_hamiltonian(; ε, κ, α, boundary=:zero)
 H, qgrid = finite_difference_hamiltonian(Hdesc, grid_spec)
-baseline = grid_eigenstates(Hdesc, grid_spec; nev=1)
+baseline = grid_eigenstates(Hdesc, grid_spec; nev=8)
 
-E0_fd = baseline.energies[1]
-ψ_fd = copy(baseline.wavefunctions[:, 1])
+Efd = baseline.energies
+Ψfd = baseline.wavefunctions
+E0_fd = Efd[1]
+ψ_fd = copy(Ψfd[:, 1])
 ψ_fd ./= sqrt(real(grid_inner(qgrid, ψ_fd, ψ_fd)))
 
 iterations_for_chi(χ) = χ == 1 ? 900 : (χ == 3 ? 2500 : (χ == 4 ? 800 : 2000))
@@ -146,18 +148,25 @@ end
 @printf("ε                         = %.6f\n", ε)
 @printf("α                         = %.12f\n", α)
 @printf("κ                         = %.6f\n", κ)
-@printf("finite-difference E0      = %.12f\n\n", E0_fd)
-@printf("%3s %15s %11s %12s %10s %10s %10s %10s %10s %10s\n",
-        "χ", "CMPS energy", "error", "FD overlap", "resid", "<cosq>",
-        "<cosp>", "<q²>", "<p²>", "bdry")
+@printf("finite-difference E0      = %.12f\n", E0_fd)
+@printf("FD low spectrum:\n")
+for k in eachindex(Efd)
+    @printf("%2d  E = %.12f   gap = %.6e\n", k, Efd[k], Efd[k] - Efd[1])
+end
+println()
+@printf("%3s %15s %11s %10s %10s %10s %10s %10s %10s\n",
+        "χ", "CMPS energy", "error", "F1", "F2", "F4", "F8", "resid", "bdry")
 
 previous = Ref{Any}(nothing)
 for χ in 1:4
     out = optimize_gkp_chi(χ, H, qgrid, qmin, qmax, α; previous=previous[])
-    overlap = grid_overlap_abs2(qgrid, out.psi, ψ_fd)
+    F1 = grid_overlap_abs2(qgrid, out.psi, ψ_fd)
+    F2 = grid_subspace_overlap_abs2(qgrid, out.psi, Ψfd; nstates=2)
+    F4 = grid_subspace_overlap_abs2(qgrid, out.psi, Ψfd; nstates=4)
+    F8 = grid_subspace_overlap_abs2(qgrid, out.psi, Ψfd; nstates=8)
     d = out.diagnostics
-    @printf("%3d %15.9f %11.3e %12.9f %10.3e %10.6f %10.6f %10.6f %10.6f %10.3e\n",
-            χ, out.energy, out.energy - E0_fd, overlap, out.residual,
-            d.cosq, d.cosp, d.q2, d.p2, d.boundary_weight)
+    @printf("%3d %15.9f %11.3e %10.6f %10.6f %10.6f %10.6f %10.3e %10.3e\n",
+            χ, out.energy, out.energy - E0_fd, F1, F2, F4, F8,
+            out.residual, d.boundary_weight)
     previous[] = (χ, out.theta)
 end

@@ -47,7 +47,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `examples/04_regularized_gkp.jl` — optimized finite-energy approximate GKP comb for a regularized Hamiltonian.
 - `examples/05_constant_gauge_harmonic.jl` — first χ > 1 constant-gauge matrix ansatz benchmarked on the harmonic oscillator.
 - `examples/06_constant_gauge_quartic.jl` — χ sweep for the quartic oscillator with FD energy, overlap, normalization, and residual diagnostics.
-- `examples/07_regularized_gkp.jl` — χ sweep for the finite-energy regularized GKP Hamiltonian with stabilizer, width, residual, overlap, and boundary diagnostics.
+- `examples/07_regularized_gkp.jl` — χ sweep for the finite-energy regularized GKP Hamiltonian with FD spectrum, low-energy sector overlaps, residual, and boundary diagnostics.
 
 ## Benchmarks
 
@@ -61,10 +61,27 @@ values on the default grids are:
 | `06_constant_gauge_quartic.jl` | `p²/2 + q²/2 + 0.1q⁴` | 2 | `0.559208448098` | `0.559035348215` | `1.73e-4` | `0.999968970565` | `3.39e-2` |
 | `06_constant_gauge_quartic.jl` | `p²/2 + q²/2 + 0.1q⁴` | 3 | `0.559108121773` | `0.559035348215` | `7.28e-5` | `0.999991910121` | `2.58e-2` |
 | `06_constant_gauge_quartic.jl` | `p²/2 + q²/2 + 0.1q⁴` | 4 | `0.559107240152` | `0.559035348215` | `7.19e-5` | `0.999992015470` | `2.56e-2` |
-| `07_regularized_gkp.jl` | `-cos(αq)-cos(αp)+0.05(q²+p²)/2` | 1 | `-0.622020906` | `-1.248221678` | `6.26e-1` | `0.319840324` | `7.08e-1` |
-| `07_regularized_gkp.jl` | `-cos(αq)-cos(αp)+0.05(q²+p²)/2` | 2 | `-1.189404939` | `-1.248221678` | `5.88e-2` | `0.568769340` | `3.14e-1` |
-| `07_regularized_gkp.jl` | `-cos(αq)-cos(αp)+0.05(q²+p²)/2` | 3 | `-1.244445169` | `-1.248221678` | `3.78e-3` | `0.589287664` | `9.41e-2` |
-| `07_regularized_gkp.jl` | `-cos(αq)-cos(αp)+0.05(q²+p²)/2` | 4 | `-1.244453224` | `-1.248221678` | `3.77e-3` | `0.589289115` | `9.39e-2` |
+
+For `examples/07_regularized_gkp.jl`, the FD spectrum reveals a tight low-energy
+doublet, so the example reports `Fm = sum(abs2(<phi_k|psi>), k=1:m)`:
+
+| k | FD energy | Gap |
+| ---: | ---: | ---: |
+| 1 | `-1.248221678216` | `0.000000e+00` |
+| 2 | `-1.246496671892` | `1.725006e-03` |
+| 3 | `-0.572346965235` | `6.758747e-01` |
+| 4 | `-0.560628158773` | `6.875935e-01` |
+| 5 | `-0.521984456165` | `7.262372e-01` |
+| 6 | `-0.508929848343` | `7.392918e-01` |
+| 7 | `-0.006776013545` | `1.241446e+00` |
+| 8 | `0.026367269026` | `1.274589e+00` |
+
+| χ | CMPS energy | Error | F1 | F2 | F4 | F8 | Residual | Boundary |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | `-0.622020906` | `6.262e-01` | `0.319840` | `0.542067` | `0.542067` | `0.917249` | `7.081e-01` | `1.675e-04` |
+| 2 | `-1.189404965` | `5.882e-02` | `0.568769` | `0.963980` | `0.963980` | `0.984020` | `3.141e-01` | `1.512e-06` |
+| 3 | `-1.244445169` | `3.777e-03` | `0.589288` | `0.998748` | `0.998749` | `0.999011` | `9.405e-02` | `8.993e-07` |
+| 4 | `-1.244453224` | `3.768e-03` | `0.589289` | `0.998754` | `0.998754` | `0.999000` | `9.388e-02` | `8.547e-07` |
 
 ## Next steps
 

@@ -37,6 +37,8 @@ end
     @test out.energies[2] ≈ 1.5 atol=4e-3
     @test out.energies[3] ≈ 2.5 atol=8e-3
     @test trapz(out.q, abs2.(out.wavefunctions[:, 1])) ≈ 1.0 atol=1e-10
+    @test grid_subspace_overlap_abs2(out.q, out.wavefunctions[:, 1], out.wavefunctions;
+                                     nstates=3) ≈ 1.0 atol=1e-10
 end
 
 @testset "GKP finite-comb trend" begin
@@ -142,9 +144,12 @@ end
     qgrid = grid(g)
     Hdesc = regularized_gkp_hamiltonian(; ε=1.0, κ=0.05, α, boundary=:zero)
     H, _ = finite_difference_hamiltonian(Hdesc, g)
+    @test norm(H - H') / max(norm(H), eps()) < 1e-10
+
     out = grid_eigenstates(Hdesc, g; nev=1)
     ψ = copy(out.wavefunctions[:, 1])
     ψ ./= sqrt(real(grid_inner(qgrid, ψ, ψ)))
+    @test grid_subspace_overlap_abs2(qgrid, ψ, out.wavefunctions; nstates=1) ≈ 1.0 atol=1e-10
 
     T = translation_matrix(qgrid, α; boundary=:zero)
     shifted = T * ψ
@@ -152,6 +157,7 @@ end
 
     Cp = cos_p_matrix(qgrid, α; boundary=:zero)
     @test size(Cp) == size(H)
+    @test norm(Cp - Cp') / max(norm(Cp), eps()) < 1e-10
 
     d = gkp_diagnostics(qgrid, ψ; α, boundary=:zero)
     @test d.norm ≈ 1.0 atol=1e-10
