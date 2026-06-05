@@ -13,7 +13,7 @@ This is the quadrature-space analogue of a cMPS-like continuous tensor ansatz. I
 ## Install / run
 
 ```bash
-cd cmps_quadrature_julia
+cd CMPS
 julia --project=.
 ]
 instantiate
@@ -37,6 +37,8 @@ julia --project=. examples/12_cross_phase_gate.jl
 julia --project=. examples/13_two_mode_gaussian_gates.jl
 julia --project=. examples/14_one_mode_gkp_scaling_demo.jl
 julia --project=. examples/15_high_squeezing_stress.jl
+julia --project=. examples/16_large_displacement_continuum.jl
+julia --project=. examples/17_two_gaussian_cat_scaling.jl
 ```
 
 Run tests:
@@ -68,6 +70,8 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `examples/13_two_mode_gaussian_gates.jl` — beam splitter and two-mode squeezing on `GridMPS` product vacua.
 - `examples/14_one_mode_gkp_scaling_demo.jl` — one-mode regularized-GKP scaling/compression sweep with Fock cutoff diagnostics.
 - `examples/15_high_squeezing_stress.jl` — squeezed, cubic-phase, and comb-state stress test with photon/Fock diagnostics.
+- `examples/16_large_displacement_continuum.jl` — huge displaced Gaussian showing that large quadrature values are cheap when the local integration window follows the packet.
+- `examples/17_two_gaussian_cat_scaling.jl` — two separated Gaussian packets comparing localized continuum parameters against uniform-grid and Fock cutoff proxies.
 
 ## Benchmarks
 
