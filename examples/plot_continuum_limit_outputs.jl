@@ -167,34 +167,54 @@ function plot_cat_scaling(input_path, output_path)
     println("wrote ", output_path)
 end
 
-function plot_momentum_wavefunction_phase(input_path, output_path)
-    cols = read_csv_with_header(input_path)
+function plot_momentum_wavefunction_phase(input_paths, output_path)
+    cols = [read_csv_with_header(path) for path in input_paths]
+    labels = map(input_paths) do path
+        m = match(r"P(\d+)_phase", path)
+        m === nothing ? basename(path) : "P = $(m.captures[1])"
+    end
 
     p = plot(
-        cols["q"],
-        cols["realpsi"];
+        cols[1]["q"],
+        cols[1]["realpsi"];
         xlabel = "q",
         ylabel = "Re ψ(q)",
-        label = "real wavefunction",
+        label = "Re ψ, $(labels[1])",
         linewidth = 2,
         color = :navy,
         title = "Momentum displacement: wavefunction and phase",
         legend = :topright,
     )
 
+    wave_colors = (:navy, :crimson, :darkgreen, :purple)
+    phase_colors = (:darkorange, :seagreen, :brown, :gray40)
+
+    for i in 2:length(cols)
+        plot!(
+            p,
+            cols[i]["q"],
+            cols[i]["realpsi"];
+            label = "Re ψ, $(labels[i])",
+            linewidth = 2,
+            color = wave_colors[mod1(i, length(wave_colors))],
+        )
+    end
+
     p_phase = twinx(p)
 
-    plot!(
-        p_phase,
-        cols["q"],
-        cols["phase"];
-        ylabel = "unwrapped phase",
-        label = "phase Pq",
-        linewidth = 2,
-        linestyle = :dash,
-        color = :darkorange,
-        legend = :bottomright,
-    )
+    for i in eachindex(cols)
+        plot!(
+            p_phase,
+            cols[i]["q"],
+            cols[i]["phase"];
+            ylabel = "unwrapped phase",
+            label = "phase, $(labels[i])",
+            linewidth = 2,
+            linestyle = :dash,
+            color = phase_colors[mod1(i, length(phase_colors))],
+            legend = :bottomright,
+        )
+    end
 
     savefig(p, output_path)
     println("wrote ", output_path)
@@ -221,9 +241,13 @@ plot_cat_scaling(
     "outputs/two_gaussian_cat_scaling.svg",
 )
 
-if isfile("outputs/momentum_displacement_P50_phase.csv")
+if isfile("outputs/momentum_displacement_P20_phase.csv") &&
+   isfile("outputs/momentum_displacement_P50_phase.csv")
     plot_momentum_wavefunction_phase(
-        "outputs/momentum_displacement_P50_phase.csv",
-        "outputs/momentum_displacement_P50_real_phase.svg",
+        [
+            "outputs/momentum_displacement_P20_phase.csv",
+            "outputs/momentum_displacement_P50_phase.csv",
+        ],
+        "outputs/momentum_displacement_P20_P50_real_phase.svg",
     )
 end

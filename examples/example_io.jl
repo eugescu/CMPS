@@ -172,3 +172,68 @@ function maybe_plot_wavefunction_phase(path, qgrid, ψ, phase; title="")
         return nothing
     end
 end
+
+function maybe_plot_wavefunction_phase_comparison(path, cases; title="")
+    if get(ENV, "CMPS_PLOTS", "0") != "1"
+        return nothing
+    end
+
+    try
+        @eval import Plots
+
+        isempty(cases) && return nothing
+
+        wave_colors = (:navy, :crimson, :darkgreen, :purple)
+        phase_colors = (:darkorange, :seagreen, :brown, :gray40)
+        first_case = cases[1]
+
+        p = Base.invokelatest(
+            Plots.plot,
+            first_case.qgrid,
+            real.(first_case.psi);
+            xlabel="q",
+            ylabel="Re ψ(q)",
+            label="Re ψ, $(first_case.label)",
+            linewidth=2,
+            color=wave_colors[1],
+            title,
+            legend=:topright,
+        )
+
+        for i in 2:length(cases)
+            case = cases[i]
+            Base.invokelatest(
+                Plots.plot!,
+                p,
+                case.qgrid,
+                real.(case.psi);
+                label="Re ψ, $(case.label)",
+                linewidth=2,
+                color=wave_colors[mod1(i, length(wave_colors))],
+            )
+        end
+
+        p_phase = Base.invokelatest(Plots.twinx, p)
+        for (i, case) in enumerate(cases)
+            Base.invokelatest(
+                Plots.plot!,
+                p_phase,
+                case.qgrid,
+                case.phase;
+                ylabel="unwrapped phase",
+                label="phase, $(case.label)",
+                linewidth=2,
+                linestyle=:dash,
+                color=phase_colors[mod1(i, length(phase_colors))],
+                legend=:bottomright,
+            )
+        end
+
+        mkpath(dirname(path))
+        Base.invokelatest(Plots.savefig, p, path)
+        return path
+    catch err
+        @warn "CMPS_PLOTS=1 was set, but comparison phase plotting failed. Inspect CSV output instead." exception=(err, catch_backtrace())
+        return nothing
+    end
+end

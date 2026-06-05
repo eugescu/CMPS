@@ -64,25 +64,28 @@ if get(ENV, "CMPS_WRITE_DATA", "0") == "1"
     )
     println("wrote scaling CSV: ", scaling_path)
 
-    Pviz = 50.0
     qgrid = collect(range(-8.0, 8.0; length=8001))
-    ψ = momentum_displaced_vacuum(qgrid, Pviz)
-    phase = Pviz .* qgrid
+    cases = []
 
-    phase_path = write_phase_csv(
-        joinpath("outputs", "momentum_displacement_P50_phase.csv"),
-        qgrid,
-        ψ,
-        phase,
-    )
-    println("wrote phase CSV: ", phase_path)
+    for Pviz in (20.0, 50.0)
+        ψ = momentum_displaced_vacuum(qgrid, Pviz)
+        phase = Pviz .* qgrid
+        label = "P=$(round(Int, Pviz))"
 
-    plot_path = maybe_plot_wavefunction_phase(
-        joinpath("outputs", "momentum_displacement_P50_real_phase.svg"),
-        qgrid,
-        ψ,
-        phase;
-        title="Large momentum displacement: oscillatory q-space phase",
+        phase_path = write_phase_csv(
+            joinpath("outputs", "momentum_displacement_P$(round(Int, Pviz))_phase.csv"),
+            qgrid,
+            ψ,
+            phase,
+        )
+        println("wrote phase CSV: ", phase_path)
+        push!(cases, (; qgrid, psi=ψ, phase, label))
+    end
+
+    plot_path = maybe_plot_wavefunction_phase_comparison(
+        joinpath("outputs", "momentum_displacement_P20_P50_real_phase.svg"),
+        cases;
+        title="Momentum displacement: P=20 and P=50 phase ramps",
     )
     if plot_path !== nothing
         println("wrote phase plot: ", plot_path)
