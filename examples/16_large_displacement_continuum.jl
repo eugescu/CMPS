@@ -12,6 +12,7 @@
 using Printf
 include("../src/ContinuumQuadratureCMPS.jl")
 using .ContinuumQuadratureCMPS
+include("example_io.jl")
 
 function displaced_gaussian(xgrid)
     ψ = ComplexF64[pi^(-1 / 4) * exp(-0.5 * x^2) for x in xgrid]
@@ -25,10 +26,18 @@ function fock_cutoff_proxy(nbar; tol=1e-6)
     return ceil(Int, max(1.0, nbar + z * sqrt(max(nbar, 1.0))))
 end
 
-function report_displacement(Q; L=8.0, Ngrid=1601)
+function displacement_state(Q; L=8.0, Ngrid=1601)
     xgrid = collect(range(-L, L; length=Ngrid))
     qgrid = Q .+ xgrid
     ψ = displaced_gaussian(xgrid)
+    return (; xgrid, qgrid, psi=ψ)
+end
+
+function report_displacement(Q; L=8.0, Ngrid=1601)
+    state = displacement_state(Q; L, Ngrid)
+    xgrid = state.xgrid
+    qgrid = state.qgrid
+    ψ = state.psi
     density = abs2.(ψ)
     qmean = real(trapz(xgrid, qgrid .* density))
     q2 = real(trapz(xgrid, qgrid.^2 .* density))
@@ -50,4 +59,27 @@ end
 
 for Q in (0.0, 1.0e3, 1.0e6)
     report_displacement(Q)
+end
+
+if get(ENV, "CMPS_WRITE_DATA", "0") == "1"
+    Q = 1.0e6
+    state = displacement_state(Q)
+    csv_path = write_density_csv(
+        joinpath("outputs", "large_displacement_Q1e6_density.csv"),
+        state.qgrid,
+        state.psi;
+        center=Q,
+    )
+    println("wrote density CSV: ", csv_path)
+
+    plot_path = maybe_plot_density(
+        joinpath("outputs", "large_displacement_Q1e6_density.svg"),
+        state.qgrid,
+        state.psi;
+        center=Q,
+        title="Huge displaced Gaussian, plotted in local coordinate q-Q",
+    )
+    if plot_path !== nothing
+        println("wrote density plot: ", plot_path)
+    end
 end

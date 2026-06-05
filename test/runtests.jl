@@ -185,6 +185,112 @@ end
     @test 0 <= d.boundary_weight <= 1
 end
 
+@testset "large displacement continuum example" begin
+    Q = 1.0e6
+    L = 8.0
+    N = 2001
+
+    xgrid = collect(range(-L, L; length=N))
+    qgrid = Q .+ xgrid
+    dx = xgrid[2] - xgrid[1]
+
+    ψ = ComplexF64[π^(-1 / 4) * exp(-0.5 * x^2) for x in xgrid]
+    ψ ./= sqrt(real(sum(abs2, ψ) * dx))
+
+    norm_check = real(sum(abs2, ψ) * dx)
+    qmean = real(sum(qgrid .* abs2.(ψ)) * dx)
+    centered_q2 = real(sum(abs2.(xgrid) .* abs2.(ψ)) * dx)
+
+    Hfree, _ = finite_difference_hamiltonian(
+        Hamiltonian1D("free kinetic", 0.5, q -> 0.0, Tuple{ComplexF64,Float64}[], :zero),
+        GridSpec(-L, L, N),
+    )
+    p2 = 2 * grid_expectation(xgrid, Hfree, ψ)
+
+    @test isapprox(norm_check, 1.0; atol=1e-10)
+    @test isapprox(qmean, Q; atol=1e-4)
+    @test isapprox(centered_q2, 0.5; atol=1e-5)
+    @test isapprox(p2, 0.5; atol=5e-3)
+
+    nbar_proxy = 0.5 * Q^2
+    @test isapprox(nbar_proxy, 5.0e11; rtol=1e-14)
+end
+
+@testset "two-Gaussian cat scaling example" begin
+    function gaussian_packet_grid(qgrid; center::Real=0.0, σ::Real=1.0)
+        return ComplexF64[
+            (π * σ^2)^(-1 / 4) * exp(-0.5 * ((q - center) / σ)^2)
+            for q in qgrid
+        ]
+    end
+
+    uniform_grid_points_for_cat(Q; halfwidth=8.0, dq=0.02) =
+        ceil(Int, (2Q + 2halfwidth) / dq) + 1
+
+    Q = 3.0
+    σ = 1.0
+    L = 8.0
+    N = 4001
+    qgrid = collect(range(-Q - L, Q + L; length=N))
+    dq = qgrid[2] - qgrid[1]
+
+    ψp = gaussian_packet_grid(qgrid; center=Q, σ)
+    ψm = gaussian_packet_grid(qgrid; center=-Q, σ)
+
+    normalize_grid_state!(qgrid, ψp)
+    normalize_grid_state!(qgrid, ψm)
+
+    S_grid = real(grid_inner(qgrid, ψm, ψp))
+    S_exact = exp(-Q^2 / σ^2)
+
+    @test isapprox(S_grid, S_exact; rtol=1e-3, atol=1e-8)
+
+    ψcat = (ψp .+ ψm) ./ sqrt(2 + 2S_exact)
+    normalize_grid_state!(qgrid, ψcat)
+
+    norm_check = real(sum(abs2, ψcat) * dq)
+    qmean = real(sum(qgrid .* abs2.(ψcat)) * dq)
+
+    @test isapprox(norm_check, 1.0; atol=1e-10)
+    @test abs(qmean) < 1e-8
+
+    Qs = [1.0, 10.0, 100.0, 1.0e3, 1.0e6]
+    gridNs = [uniform_grid_points_for_cat(Q; halfwidth=8.0, dq=0.02) for Q in Qs]
+    fock_proxies = [0.5 * Q^2 for Q in Qs]
+
+    @test all(diff(gridNs) .> 0)
+    @test all(diff(fock_proxies) .> 0)
+
+    localized_param_count = fill(6, length(Qs))
+    @test all(localized_param_count .== localized_param_count[1])
+end
+
+@testset "spatial bipartition entropy identities" begin
+    erf_float_test(x) = ccall(:erf, Float64, (Float64,), Float64(x))
+    binary_entropy_test(p) = begin
+        p = clamp(Float64(p), 0.0, 1.0)
+        (p == 0.0 || p == 1.0) && return 0.0
+        -p * log(p) - (1 - p) * log(1 - p)
+    end
+    gaussian_left_probability_test(qcut; center=0.0, σ=1.0) =
+        0.5 * (1 + erf_float_test((qcut - center) / σ))
+    cat_left_probability_test(qcut; Q, σ=1.0) =
+        0.5 * gaussian_left_probability_test(qcut; center=-Q, σ) +
+        0.5 * gaussian_left_probability_test(qcut; center=Q, σ)
+
+    @test binary_entropy_test(0.0) == 0.0
+    @test binary_entropy_test(1.0) == 0.0
+    @test binary_entropy_test(0.5) ≈ log(2) atol=1e-15
+    @test exp(binary_entropy_test(0.5)) ≈ 2.0 atol=1e-15
+
+    @test gaussian_left_probability_test(1.0e6; center=1.0e6) ≈ 0.5 atol=1e-15
+
+    Q = 20.0
+    @test cat_left_probability_test(-Q; Q) ≈ 0.25 atol=1e-14
+    @test cat_left_probability_test(0.0; Q) ≈ 0.5 atol=1e-14
+    @test cat_left_probability_test(Q; Q) ≈ 0.75 atol=1e-14
+end
+
 @testset "one-mode gates" begin
     qgrid = collect(range(-10.0, 10.0; length=1001))
     dq = qgrid[2] - qgrid[1]

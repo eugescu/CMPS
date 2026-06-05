@@ -15,6 +15,7 @@
 using Printf
 include("../src/ContinuumQuadratureCMPS.jl")
 using .ContinuumQuadratureCMPS
+include("example_io.jl")
 
 function gaussian_packet(q, center, sigma)
     pref = (pi * sigma^2)^(-1 / 4)
@@ -44,6 +45,9 @@ function fock_cutoff_proxy(nbar; tol=1e-6)
     return ceil(Int, max(1.0, nbar + z * sqrt(max(nbar, 1.0))))
 end
 
+uniform_grid_points_for_cat(Q; halfwidth=8.0, dq=0.02) =
+    ceil(Int, (2Q + 2halfwidth) / dq) + 1
+
 function report_cat(Q; sigma=1.0, phi=0.0, dq_uniform=0.02)
     qgrid = localized_cat_grid(Q, sigma)
     ψ = ComplexF64[cat_amplitude(q, Q, sigma, phi) for q in qgrid]
@@ -55,13 +59,15 @@ function report_cat(Q; sigma=1.0, phi=0.0, dq_uniform=0.02)
     nbar = photon_number_from_qp(q2, p2)
 
     L = 8.0 * sigma
-    uniform_N = ceil(Int, (2Q + 2L) / dq_uniform) + 1
+    uniform_N = uniform_grid_points_for_cat(Q; halfwidth=L, dq=dq_uniform)
     Ncut = fock_cutoff_proxy(nbar)
-    continuum_params = 5
+    continuum_params = 6
     norm_error = abs(norm - 1)
 
     @printf("%11.3e %13.6e %13d %14d %8d %10.2e %8d\n",
             Q, nbar, uniform_N, Ncut, continuum_params, norm_error, length(qgrid))
+    return (; Q, nbar, uniform_N, fock_proxy=Ncut, continuum_params, norm_error,
+            nquad=length(qgrid))
 end
 
 @printf("two-Gaussian cat scaling example\n")
@@ -70,6 +76,43 @@ end
         "Q", "nbar proxy", "grid N need", "Fock proxy",
         "params", "norm err", "quad pts")
 
-for Q in (5.0, 10.0, 1.0e3, 1.0e6)
-    report_cat(Q)
+Qs = (5.0, 10.0, 1.0e3, 1.0e6)
+rows = [report_cat(Q) for Q in Qs]
+
+if get(ENV, "CMPS_WRITE_DATA", "0") == "1"
+    csv_path = write_scaling_csv(
+        joinpath("outputs", "two_gaussian_cat_scaling.csv"),
+        [row.Q for row in rows],
+        [row.uniform_N for row in rows],
+        [row.fock_proxy for row in rows],
+        [row.continuum_params for row in rows],
+    )
+    println("wrote scaling CSV: ", csv_path)
+
+    Qviz = 20.0
+    sigma = 1.0
+    L = 8.0
+    N = 4001
+    qgrid_viz = collect(range(-Qviz - L, Qviz + L; length=N))
+    ψcat = ComplexF64[cat_amplitude(q, Qviz, sigma, 0.0) for q in qgrid_viz]
+    normalize_grid_state!(qgrid_viz, ψcat)
+
+    density_path = write_density_csv(
+        joinpath("outputs", "two_gaussian_cat_Q20_density.csv"),
+        qgrid_viz,
+        ψcat;
+        center=0.0,
+    )
+    println("wrote cat density CSV: ", density_path)
+
+    plot_path = maybe_plot_density(
+        joinpath("outputs", "two_gaussian_cat_Q20_density.svg"),
+        qgrid_viz,
+        ψcat;
+        center=0.0,
+        title="Two separated Gaussian packets",
+    )
+    if plot_path !== nothing
+        println("wrote cat density plot: ", plot_path)
+    end
 end
