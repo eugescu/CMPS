@@ -167,6 +167,39 @@ function plot_cat_scaling(input_path, output_path)
     println("wrote ", output_path)
 end
 
+function plot_momentum_wavefunction_phase(input_path, output_path)
+    cols = read_csv_with_header(input_path)
+
+    p = plot(
+        cols["q"],
+        cols["realpsi"];
+        xlabel = "q",
+        ylabel = "Re ψ(q)",
+        label = "real wavefunction",
+        linewidth = 2,
+        color = :navy,
+        title = "Momentum displacement: wavefunction and phase",
+        legend = :topright,
+    )
+
+    p_phase = twinx(p)
+
+    plot!(
+        p_phase,
+        cols["q"],
+        cols["phase"];
+        ylabel = "unwrapped phase",
+        label = "phase Pq",
+        linewidth = 2,
+        linestyle = :dash,
+        color = :darkorange,
+        legend = :bottomright,
+    )
+
+    savefig(p, output_path)
+    println("wrote ", output_path)
+end
+
 ensure_outputs()
 
 plot_gaussian_wavefunction_entropy(
@@ -187,3 +220,10 @@ plot_cat_scaling(
     "outputs/two_gaussian_cat_scaling.csv",
     "outputs/two_gaussian_cat_scaling.svg",
 )
+
+if isfile("outputs/momentum_displacement_P50_phase.csv")
+    plot_momentum_wavefunction_phase(
+        "outputs/momentum_displacement_P50_phase.csv",
+        "outputs/momentum_displacement_P50_real_phase.svg",
+    )
+end

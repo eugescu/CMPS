@@ -291,6 +291,57 @@ end
     @test cat_left_probability_test(Q; Q) ≈ 0.75 atol=1e-14
 end
 
+@testset "large momentum displacement q-space example" begin
+    phase_wavelength_test(P) = P == 0 ? Inf : 2π / abs(P)
+    grid_points_proxy_test(P; qmin=-8.0, qmax=8.0, base_N=801, phase_resolution=0.1) =
+        P == 0 ? base_N : ceil(Int, (qmax - qmin) * abs(P) / phase_resolution) + 1
+    fock_proxy_test(P) = max(5, ceil(Int, 0.5 * P^2))
+
+    @test isinf(phase_wavelength_test(0.0))
+    @test phase_wavelength_test(100.0) ≈ 2π / 100 atol=1e-15
+    @test grid_points_proxy_test(0.0) == 801
+    @test grid_points_proxy_test(100.0) == 16001
+    @test grid_points_proxy_test(1.0e3) == 160001
+    @test fock_proxy_test(0.0) == 5
+    @test fock_proxy_test(1.0e6) == 500000000000
+
+    function central_derivative_values(qgrid, ψ)
+        dψ = similar(ψ)
+        dq = qgrid[2] - qgrid[1]
+        dψ[1] = (ψ[2] - ψ[1]) / dq
+        for i in 2:length(qgrid)-1
+            dψ[i] = (ψ[i+1] - ψ[i-1]) / (2dq)
+        end
+        dψ[end] = (ψ[end] - ψ[end-1]) / dq
+        return dψ
+    end
+
+    qgrid = collect(range(-8.0, 8.0; length=16001))
+    dq = qgrid[2] - qgrid[1]
+    P = 20.0
+    ψ = ComplexF64[π^(-1 / 4) * exp(-0.5 * q^2) * exp(1im * P * q)
+                  for q in qgrid]
+    ψ ./= sqrt(real(sum(abs2, ψ) * dq))
+
+    density = abs2.(ψ)
+    vacuum_density = π^(-1 / 2) .* exp.(-(qgrid .^ 2))
+    phase = P .* qgrid
+
+    @test real(sum(density) * dq) ≈ 1.0 atol=1e-10
+    @test maximum(abs.(density .- vacuum_density)) < 1e-10
+    @test real(sum(qgrid .* density) * dq) ≈ 0.0 atol=1e-12
+    @test real(sum(qgrid.^2 .* density) * dq) ≈ 0.5 atol=1e-8
+    @test (phase[end] - phase[1]) / (qgrid[end] - qgrid[1]) ≈ P atol=1e-12
+
+    dψ = central_derivative_values(qgrid, ψ)
+    pψ = -im .* dψ
+    pmean = real(sum(conj.(ψ) .* pψ) * dq)
+    p2mean = real(sum(abs2, dψ) * dq)
+
+    @test isapprox(pmean, P; rtol=1e-3)
+    @test isapprox(p2mean, P^2 + 0.5; rtol=1e-3)
+end
+
 @testset "one-mode gates" begin
     qgrid = collect(range(-10.0, 10.0; length=1001))
     dq = qgrid[2] - qgrid[1]

@@ -40,11 +40,12 @@ julia --project=. examples/15_high_squeezing_stress.jl
 julia --project=. examples/16_large_displacement_continuum.jl
 julia --project=. examples/17_two_gaussian_cat_scaling.jl
 julia --project=. examples/18_spatial_bipartition_entropy.jl
+julia --project=. examples/19_large_momentum_displacement_qspace.jl
 ```
 
-Examples 16, 17, and 18 can also write CSV artifacts with `CMPS_WRITE_DATA=1`.
+Examples 16, 17, 18, and 19 can also write CSV artifacts with `CMPS_WRITE_DATA=1`.
 If `Plots.jl` is already installed, add `CMPS_PLOTS=1` to also write SVG
-density or entropy plots. Generated files go under `outputs/`.
+density, entropy, or phase plots. Generated files go under `outputs/`.
 
 Run tests:
 
@@ -79,6 +80,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `examples/16_large_displacement_continuum.jl` — huge displaced Gaussian showing that large quadrature values are cheap when the local integration window follows the packet.
 - `examples/17_two_gaussian_cat_scaling.jl` — two separated Gaussian packets comparing localized continuum parameters against uniform-grid and Fock cutoff proxies.
 - `examples/18_spatial_bipartition_entropy.jl` — one-coordinate cut entropy curves showing `Deff <= 2` even when grid/Fock representation proxies grow.
+- `examples/19_large_momentum_displacement_qspace.jl` — large momentum displacement showing q-space resolution cost, unchanged density, and oscillatory phase diagnostics.
 
 ## Benchmarks
 

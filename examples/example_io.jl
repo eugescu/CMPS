@@ -106,3 +106,69 @@ function maybe_plot_entropy_curves(path, curves; title="", xlabel="local cut", y
         return nothing
     end
 end
+
+function write_phase_csv(path, qgrid, ψ, phase)
+    mkpath(dirname(path))
+    open(path, "w") do io
+        println(io, "q,density,realpsi,imagpsi,phase")
+        for i in eachindex(qgrid)
+            println(io, "$(qgrid[i]),$(abs2(ψ[i])),$(real(ψ[i])),$(imag(ψ[i])),$(phase[i])")
+        end
+    end
+    return path
+end
+
+function write_momentum_scaling_csv(path, Ps, wavelengths, gridNs, fockProxies, params)
+    mkpath(dirname(path))
+    open(path, "w") do io
+        println(io, "P,phase_wavelength,grid_N_proxy,fock_proxy,localized_params")
+        for i in eachindex(Ps)
+            println(io, "$(Ps[i]),$(wavelengths[i]),$(gridNs[i]),$(fockProxies[i]),$(params[i])")
+        end
+    end
+    return path
+end
+
+function maybe_plot_wavefunction_phase(path, qgrid, ψ, phase; title="")
+    if get(ENV, "CMPS_PLOTS", "0") != "1"
+        return nothing
+    end
+
+    try
+        @eval import Plots
+
+        p = Base.invokelatest(
+            Plots.plot,
+            qgrid,
+            real.(ψ);
+            xlabel="q",
+            ylabel="Re ψ(q)",
+            label="real wavefunction",
+            linewidth=2,
+            color=:navy,
+            title,
+            legend=:topright,
+        )
+
+        p_phase = Base.invokelatest(Plots.twinx, p)
+        Base.invokelatest(
+            Plots.plot!,
+            p_phase,
+            qgrid,
+            phase;
+            ylabel="unwrapped phase",
+            label="phase Pq",
+            linewidth=2,
+            linestyle=:dash,
+            color=:darkorange,
+            legend=:bottomright,
+        )
+
+        mkpath(dirname(path))
+        Base.invokelatest(Plots.savefig, p, path)
+        return path
+    catch err
+        @warn "CMPS_PLOTS=1 was set, but phase plotting failed. Inspect CSV output instead." exception=(err, catch_backtrace())
+        return nothing
+    end
+end
