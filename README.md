@@ -47,6 +47,16 @@ Examples 16, 17, 18, and 19 can also write CSV artifacts with `CMPS_WRITE_DATA=1
 If `Plots.jl` is already installed, add `CMPS_PLOTS=1` to also write SVG
 density, entropy, or phase plots. Generated files go under `outputs/`.
 
+The continuum-limit displacement examples separate two different q-space
+failure modes. A large position displacement is a range problem: the packet
+moves far away in `q`. A large momentum displacement is a resolution problem:
+the density is unchanged, but the phase oscillates as `exp(iPq)`. A
+phase-space-aware continuum component stores both `Q` and `P` as parameters, so
+both displacements remain `O(1)` at the ansatz level, while a uniform grid and
+Fock basis see `O(P)` and `O(P^2)`-type costs respectively.
+
+![Momentum displacement P=50 real part and phase](docs/figures/momentum_displacement_P50_real_phase.svg)
+
 Run tests:
 
 ```bash
@@ -60,6 +70,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `src/GridMPS.jl` — grid-backed MPS site/state types, product states, dense conversion, norms, one-site gate updates, and two-site weighted SVD splitting.
 - `src/FockDiagnostics.jl` — Fock-basis projection, cumulative weight, cutoff, and photon-number proxy diagnostics.
 - `docs/one_mode_demonstration.md` — narrative one-mode demonstration from Hamiltonians through GKP noise and one-mode gate errors.
+- `docs/figures/momentum_displacement_P50_real_phase.svg` — polished Argand-plane caveat figure for the large-momentum q-space stress test.
 - `examples/example_io.jl` — optional CSV/SVG density and scaling-output helpers used by the continuum-limit examples.
 - `test/runtests.jl` — grid helper tests, harmonic Gaussian checks, finite-difference oscillator spectrum, GKP finite-comb trend, ITensor bridge sanity check, and constant-gauge χ > 1 checks.
 - `examples/01_harmonic_gaussian.jl` — Gaussian ground state of harmonic oscillator.
