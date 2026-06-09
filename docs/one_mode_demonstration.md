@@ -97,6 +97,7 @@ the code-sector metric F2.
 Relevant files:
 
 - `examples/14_one_mode_gkp_scaling_demo.jl`
+- `examples/20_gkp_figure_pack.jl`
 - `src/FockDiagnostics.jl`
 
 ## Regularized GKP Hamiltonian

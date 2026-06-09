@@ -41,11 +41,14 @@ julia --project=. examples/16_large_displacement_continuum.jl
 julia --project=. examples/17_two_gaussian_cat_scaling.jl
 julia --project=. examples/18_spatial_bipartition_entropy.jl
 julia --project=. examples/19_large_momentum_displacement_qspace.jl
+julia --project=. examples/20_gkp_figure_pack.jl
 ```
 
 Examples 16, 17, 18, and 19 can also write CSV artifacts with `CMPS_WRITE_DATA=1`.
 If `Plots.jl` is already installed, add `CMPS_PLOTS=1` to also write SVG
 density, entropy, or phase plots. Generated files go under `outputs/`.
+Example 20 writes GKP figure-pack CSVs by default and writes SVGs when
+`CMPS_PLOTS=1`; set `CMPS_FAST_DEMO=1` for a quick smoke run.
 
 The continuum-limit displacement examples separate two different q-space
 failure modes. A large position displacement is a range problem: the packet
@@ -92,6 +95,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `examples/17_two_gaussian_cat_scaling.jl` — two separated Gaussian packets comparing localized continuum parameters against uniform-grid and Fock cutoff proxies.
 - `examples/18_spatial_bipartition_entropy.jl` — one-coordinate cut entropy curves showing `Deff <= 2` even when grid/Fock representation proxies grow.
 - `examples/19_large_momentum_displacement_qspace.jl` — large momentum displacement showing q-space resolution cost, unchanged density, and oscillatory phase diagnostics.
+- `examples/20_gkp_figure_pack.jl` — presentation-layer GKP figure-pack CSV/SVG generator for density, scaling, accuracy, and noise-response plots.
 
 ## Benchmarks
 
