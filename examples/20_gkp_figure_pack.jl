@@ -2,7 +2,7 @@
 #
 # This is a presentation-layer script for the one-mode flagship demo. It writes
 # CSV data for:
-#   1. q-space density curves
+#   1. doublet-aware q-space density curves
 #   2. scaling/compression versus kappa
 #   3. accuracy versus chi
 #   4. Hamiltonian-noise response
@@ -255,13 +255,21 @@ println("grid points = $Ngrid, Fock Nmax = $Nfock, fast = $fast")
 density_rows = Vector{Vector{Any}}()
 for κ in κ_density
     Hdesc = regularized_gkp_hamiltonian(; ε, κ, α, boundary=:zero)
-    fd = grid_eigenstates(Hdesc, grid_spec; nev=1)
-    ψ = fd.wavefunctions[:, 1]
+    fd = grid_eigenstates(Hdesc, grid_spec; nev=2)
+    ϕ1 = fd.wavefunctions[:, 1]
+    ϕ2 = fd.wavefunctions[:, 2]
     for i in eachindex(qgrid)
-        push!(density_rows, Any[κ, qgrid[i], abs2(ψ[i]), real(ψ[i]), imag(ψ[i])])
+        ρ1 = abs2(ϕ1[i])
+        ρ2 = abs2(ϕ2[i])
+        ρcode = 0.5 * (ρ1 + ρ2)
+        push!(density_rows, Any[κ, qgrid[i], ρcode, ρ1, ρ2,
+                                real(ϕ1[i]), imag(ϕ1[i]),
+                                real(ϕ2[i]), imag(ϕ2[i])])
     end
 end
-write_csv(paths.density, ["kappa", "q", "density", "realpsi", "imagpsi"], density_rows)
+write_csv(paths.density, ["kappa", "q", "density", "rho1", "rho2",
+                          "realphi1", "imagphi1", "realphi2", "imagphi2"],
+          density_rows)
 println("wrote ", paths.density)
 
 accuracy_rows = Vector{Vector{Any}}()

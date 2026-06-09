@@ -50,8 +50,9 @@ density, entropy, or phase plots. Generated files go under `outputs/`.
 Example 20 writes GKP figure-pack CSVs by default; set `CMPS_FAST_DEMO=1` for a
 quick smoke run. To turn those CSVs into presentation outputs, run
 `python examples/plot_gkp_figure_pack.py`. That script uses Matplotlib for the
-finite-energy GKP comb plot and writes the chi/noise diagnostics as Markdown
-tables.
+finite-energy GKP comb plots, including doublet-aware code-sector density, a
+q/p density check, and a Husimi-Q phase-space heatmap. It writes the chi/noise
+diagnostics as Markdown tables.
 
 The continuum-limit displacement examples separate two different q-space
 failure modes. A large position displacement is a range problem: the packet
@@ -62,6 +63,15 @@ both displacements remain `O(1)` at the ansatz level, while a uniform grid and
 Fock basis see `O(P)` and `O(P^2)`-type costs respectively.
 
 ![Momentum displacement P=50 real part and phase](docs/figures/momentum_displacement_P50_real_phase.svg)
+
+![Code-sector Husimi Q function for the finite-energy GKP doublet](docs/figures/gkp_husimi_Q_kappa005.png)
+
+Code-sector Husimi `Q` function for the finite-energy GKP doublet at
+`kappa = 0.05`. Although the state is represented in a single quadrature
+polarization, coherent-state overlaps reveal its two-dimensional phase-space
+structure. The plotted density averages the two lowest finite-difference
+branches, making the visualization insensitive to arbitrary rotations inside
+the near-degenerate GKP doublet.
 
 Run tests:
 
@@ -77,6 +87,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `src/FockDiagnostics.jl` — Fock-basis projection, cumulative weight, cutoff, and photon-number proxy diagnostics.
 - `docs/one_mode_demonstration.md` — narrative one-mode demonstration from Hamiltonians through GKP noise and one-mode gate errors.
 - `docs/figures/momentum_displacement_P50_real_phase.svg` — polished Argand-plane caveat figure for the large-momentum q-space stress test.
+- `docs/figures/gkp_husimi_Q_kappa005.png` — code-sector Husimi phase-space visualization for the finite-energy GKP doublet.
 - `examples/example_io.jl` — optional CSV/SVG density and scaling-output helpers used by the continuum-limit examples.
 - `test/runtests.jl` — grid helper tests, harmonic Gaussian checks, finite-difference oscillator spectrum, GKP finite-comb trend, ITensor bridge sanity check, and constant-gauge χ > 1 checks.
 - `examples/01_harmonic_gaussian.jl` — Gaussian ground state of harmonic oscillator.
