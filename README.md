@@ -47,8 +47,11 @@ julia --project=. examples/20_gkp_figure_pack.jl
 Examples 16, 17, 18, and 19 can also write CSV artifacts with `CMPS_WRITE_DATA=1`.
 If `Plots.jl` is already installed, add `CMPS_PLOTS=1` to also write SVG
 density, entropy, or phase plots. Generated files go under `outputs/`.
-Example 20 writes GKP figure-pack CSVs by default and writes SVGs when
-`CMPS_PLOTS=1`; set `CMPS_FAST_DEMO=1` for a quick smoke run.
+Example 20 writes GKP figure-pack CSVs by default; set `CMPS_FAST_DEMO=1` for a
+quick smoke run. To turn those CSVs into presentation outputs, run
+`python examples/plot_gkp_figure_pack.py`. That script uses Matplotlib for the
+finite-energy GKP comb plot and writes the chi/noise diagnostics as Markdown
+tables.
 
 The continuum-limit displacement examples separate two different q-space
 failure modes. A large position displacement is a range problem: the packet
